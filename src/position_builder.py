@@ -2,9 +2,16 @@ import numpy as np
 from dataclasses import dataclass
 
 class Leg:
-    pass
+    def short_call(self, strike, premium, expiration):
+        pass
+
+    def short_put(self, strike, premium, expiration):
+        pass
 
 @dataclass
 class Position:
-    def calculate_max_loss(self):
-        return -np.Infinity
+    def __init__(self, legs):
+        self.legs = []
+
+    def max_loss(self):
+        return -np.inf
