@@ -6,12 +6,13 @@ class Leg:
         pass
 
     def short_put(self, strike, premium, expiration):
-        pass
+        return {"type": "short_put", "strike": strike, "premium": premium}
 
 @dataclass
 class Position:
     def __init__(self, legs):
-        self.legs = []
+        self.legs = legs
 
     def max_loss(self):
-        return -np.inf
+        leg = self.legs[0]
+        return leg["strike"] - leg["premium"] 
