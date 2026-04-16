@@ -1,14 +1,32 @@
 import numpy as np
 from dataclasses import dataclass
+from abc import ABC, abstractmethod
 
-class ShortPut:
+class Leg:
     def __init__(self, strike, premium, expiration):
         self.strike = strike
         self.premium = premium
         self.expiration = expiration
+    
+    @abstractmethod
+    def max_loss(self):
+        pass
 
+class ShortPut(Leg):
     def max_loss(self):
         return self.strike - self.premium
+    
+class ShortCall(Leg):
+    def max_loss(self):
+        return float("inf")
+
+class LongPut(Leg):
+    def max_loss(self):
+        return self.premium
+    
+class LongCall(Leg):
+    def max_loss(self):
+        return self.premium 
 
 
 class Leg:
@@ -24,5 +42,4 @@ class Position:
         self.legs = legs
 
     def max_loss(self):
-        leg = self.legs[0]
-        return leg.max_loss()
+        return sum(leg.max_loss()for leg in self.legs)
