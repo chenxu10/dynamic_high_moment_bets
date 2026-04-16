@@ -1,6 +1,16 @@
 import numpy as np
 from dataclasses import dataclass
 
+class ShortPut:
+    def __init__(self, strike, premium, expiration):
+        self.strike = strike
+        self.premium = premium
+        self.expiration = expiration
+
+    def max_loss(self):
+        return self.strike - self.premium
+
+
 class Leg:
     def short_call(self, strike, premium, expiration):
         pass
@@ -15,4 +25,4 @@ class Position:
 
     def max_loss(self):
         leg = self.legs[0]
-        return leg["strike"] - leg["premium"] 
+        return leg.max_loss()
