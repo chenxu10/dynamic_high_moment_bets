@@ -1,4 +1,3 @@
-import numpy as np
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
@@ -15,65 +14,57 @@ class Leg(ABC):
         self.contract = contract
     
     @abstractmethod
-    def max_loss(self):
+    def pnl_at(self, price):
+        """Return this leg's P&L when the underlying is at `price` at expiration."""
         pass
 
 class ShortPut(Leg):
-    def max_loss(self):
+    def pnl_at(self, price):
         c = self.contract
-        return c.strike * c.volume * 100 - c.premium
-    
+        intrinsic = max(c.strike - price, 0) * c.volume * 100
+        return c.premium - intrinsic
+
 class ShortCall(Leg):
-    def max_loss(self):
-        return float("inf")
+    def pnl_at(self, price):
+        c = self.contract
+        intrinsic = max(price - c.strike, 0) * c.volume * 100
+        return c.premium - intrinsic
 
 class LongPut(Leg):
-    def max_loss(self):
+    def pnl_at(self, price):
         c = self.contract
-        return c.premium
-    
+        intrinsic = max(c.strike - price, 0) * c.volume * 100
+        return intrinsic - c.premium
+
 class LongCall(Leg):
-    def max_loss(self):
+    def pnl_at(self, price):
         c = self.contract
-        return c.premium
+        intrinsic = max(price - c.strike, 0) * c.volume * 100
+        return intrinsic - c.premium
 
 class LongStock(Leg):
-    def max_loss(self):
+    def pnl_at(self, price):
         c = self.contract
-        return c.strike * c.volume * 100
+        # Stock volume is in individual shares, not 100-share contracts
+        return (price - c.strike) * c.volume
 
 class Position:
     def __init__(self, legs):
         self.legs = legs
 
+    def _total_pnl_at(self, price):
+        return sum(leg.pnl_at(price) for leg in self.legs)
+
     def max_loss(self):
-        # Check for covered call: LongStock + ShortCall combination
-        long_stock_volume = sum(
-            leg.contract.volume for leg in self.legs if isinstance(leg, LongStock)
-        )
-        short_call_volume = sum(
-            leg.contract.volume for leg in self.legs if isinstance(leg, ShortCall)
-        )
-        
-        # If we have a covered call (stock covers the short call)
-        if long_stock_volume > 0 and short_call_volume > 0:
-            covered_volume = min(long_stock_volume, short_call_volume)
-            total_loss = 0
-            
-            for leg in self.legs:
-                if isinstance(leg, LongStock):
-                    # Stock at risk if price goes to $0
-                    total_loss += leg.contract.strike * leg.contract.volume * 100
-                elif isinstance(leg, ShortCall):
-                    # For covered calls, short call premium offsets the loss
-                    # The covered portion has limited loss (just premium received)
-                    total_loss -= leg.contract.premium * (covered_volume / leg.contract.volume)
-                    # Any uncovered portion still has infinite loss
-                    if leg.contract.volume > covered_volume:
-                        return float("inf")
-                else:
-                    total_loss += leg.max_loss()
-            return total_loss
-        
-        # Default: simple sum of individual leg max losses
-        return sum(leg.max_loss() for leg in self.legs)
+        # Detect unbounded loss: if P&L keeps falling as price rises,
+        # loss is infinite. Two points past the max strike suffice because
+        # option P&L is piecewise-linear above the highest strike.
+        high = max(leg.contract.strike for leg in self.legs) * 10 + 1
+        if self._total_pnl_at(high * 2) < self._total_pnl_at(high):
+            return float("inf")
+
+        # Evaluate at all critical prices: 0 and every strike.
+        # Option P&L is piecewise-linear; extremes occur at kink points.
+        prices = [0] + [leg.contract.strike for leg in self.legs]
+        worst_pnl = min(self._total_pnl_at(p) for p in prices)
+        return -worst_pnl
