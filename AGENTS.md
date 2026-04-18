@@ -90,14 +90,6 @@ Use the **Arrange-Act-Assert** pattern:
 - **Act**: Execute the code under test
 - **Assert**: Verify the expected outcome
 
-## When to Use TDD
-
-- New feature development
-- Bug fixing (write a test that reproduces the bug, then fix it)
-- Learning new APIs or libraries
-- Refactoring existing code (ensure tests exist first)
-- Anytime you want confidence in your code
-
 ## Anti-Patterns to Avoid
 
 - **Writing all tests first** - take it one test at a time
@@ -105,6 +97,13 @@ Use the **Arrange-Act-Assert** pattern:
 - **Skipping the refactor step** - dirty code accumulates technical debt
 - **Writing tests after the code** - loses the design benefits of TDD
 - **Testing too much at once** - keep tests small and focused
+
+## Good Test F.I.R.S.T
+- Fast
+- Independent
+- Reproducible
+- Self-Validating
+- Timely
 
 ## Confidence Through Tests
 

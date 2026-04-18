@@ -1,29 +1,41 @@
 def ask_for_number_of_legs():
-    num_legs = 0
-    while num_legs <= 0:
+    return _get_validated_input(
+        "How many legs in your portfolio? ",
+        int,
+        "Please enter a valid number.",
+        lambda x: x > 0,
+        "Please enter a positive number."
+    )
+
+def _get_validated_input(prompt, converter, error_msg, validator=None, validation_error_msg=None):
+    """Get and validate user input with a type converter and optional validator."""
+    while True:
         try:
-            num_legs = int(input("How many legs in your portfolio? "))
-            if num_legs <= 0:
-                print("Please enter a positive number.")
+            value = converter(input(prompt))
+            if validator is None or validator(value):
+                return value
+            if validation_error_msg:
+                print(validation_error_msg)
         except ValueError:
-            print("Please enter a valid number.")
-    return num_legs
+            print(error_msg)
+
+def define_valid_leg_types():
+    valid_types = {
+        'sp': 'ShortPut',
+        'sc': 'ShortCall', 
+        'lc': 'LongCall',
+        'lp': 'LongPut',
+        'ls': 'LongStock'
+    }
+    
+    return valid_types
 
 def display_info():
     """Ask users for the number of legs and collect leg information."""
     legs = []
     
-    # Ask for number of legs
     num_legs = ask_for_number_of_legs()
-    
-    # Define valid leg types
-    valid_types = {
-        'short_put': 'ShortPut',
-        'short_call': 'ShortCall', 
-        'long_call': 'LongCall',
-        'long_put': 'LongPut',
-        'long_stock': 'LongStock'
-    }
+    valid_types = define_valid_leg_types()
     
     # Collect information for each leg
     for i in range(num_legs):
@@ -38,34 +50,30 @@ def display_info():
             print("Invalid leg type. Please choose from the valid options.")
         
         # Get strike
-        while True:
-            try:
-                strike = float(input("Enter strike price: "))
-                break
-            except ValueError:
-                print("Please enter a valid number for strike price.")
+        strike = _get_validated_input(
+            "Enter strike price: ",
+            float,
+            "Please enter a valid number for strike price."
+        )
         
         # Get premium
-        while True:
-            try:
-                premium = float(input("Enter premium: "))
-                break
-            except ValueError:
-                print("Please enter a valid number for premium.")
+        premium = _get_validated_input(
+            "Enter premium: ",
+            float,
+            "Please enter a valid number for premium."
+        )
         
         # Get expiration
         expiration = input("Enter expiration date (YYYY-MM-DD): ").strip()
         
         # Get volume
-        while True:
-            try:
-                volume = int(input("Enter volume (number of contracts): "))
-                if volume > 0:
-                    break
-                else:
-                    print("Please enter a positive number.")
-            except ValueError:
-                print("Please enter a valid integer for volume.")
+        volume = _get_validated_input(
+            "Enter volume (number of contracts): ",
+            int,
+            "Please enter a valid integer for volume.",
+            lambda x: x > 0,
+            "Please enter a positive number."
+        )
         
         leg_info = {
             'type': leg_type,
@@ -78,6 +86,7 @@ def display_info():
         print(f"Added {leg_type} leg with strike={strike}, premium={premium}, expiration={expiration}, volume={volume}")
     
     return legs
+
 
 
 def parse_user_input(user_input):
@@ -102,17 +111,40 @@ def parse_user_input(user_input):
     return {'type': leg_type, **kwargs}
 
 
-def run_cli(user_input=None):
-    """Run the CLI with either interactive or non-interactive input."""
-    if user_input:
-        # Parse the provided user input string
-        legs = [parse_user_input(user_input)]
-    else:
-        # Use interactive mode
-        legs = display_info()
+def run_cli():
+    """Run the CLI in interactive mode."""
+    legs_data = display_info()
+    position = _build_position_from_leg_data(legs_data)
+    max_loss = position.max_loss()
+    return f"Max loss of Position: {max_loss}"
+
+
+def _build_position_from_leg_data(legs_data):
+    """Build a Position from parsed leg data."""
+    from src.position_builder import Contract, ShortPut, ShortCall, LongCall, LongPut, LongStock, Position
     
-    # For now, return a fixed value (to be replaced with actual calculation)
-    return "Max loss of Position: 5.0."
+    type_mapping = {
+        'sp': ShortPut,
+        'sc': ShortCall,
+        'lc': LongCall,
+        'lp': LongPut,
+        'ls': LongStock,
+    }
+    
+    legs = []
+    for leg_data in legs_data:
+        leg_type = leg_data['type']
+        contract = Contract(
+            strike=leg_data['strike'],
+            premium=leg_data['premium'],
+            expiration=leg_data.get('expiration', ''),
+            volume=leg_data.get('volume', 1)
+        )
+        leg_class = type_mapping.get(leg_type)
+        if leg_class:
+            legs.append(leg_class(contract))
+    
+    return Position(legs=legs)
 
 
 if __name__ == "__main__":
