@@ -1,17 +1,20 @@
+def ask_for_number_of_legs():
+    num_legs = 0
+    while num_legs <= 0:
+        try:
+            num_legs = int(input("How many legs in your portfolio? "))
+            if num_legs <= 0:
+                print("Please enter a positive number.")
+        except ValueError:
+            print("Please enter a valid number.")
+    return num_legs
+
 def display_info():
     """Ask users for the number of legs and collect leg information."""
     legs = []
     
     # Ask for number of legs
-    while True:
-        try:
-            num_legs = int(input("How many legs in your portfolio? "))
-            if num_legs > 0:
-                break
-            else:
-                print("Please enter a positive number.")
-        except ValueError:
-            print("Please enter a valid number.")
+    num_legs = ask_for_number_of_legs()
     
     # Define valid leg types
     valid_types = {
@@ -75,6 +78,7 @@ def display_info():
         print(f"Added {leg_type} leg with strike={strike}, premium={premium}, expiration={expiration}, volume={volume}")
     
     return legs
+
 
 def parse_user_input(user_input):
     """Parse user input string in format 'type key=value key=value ...'.
