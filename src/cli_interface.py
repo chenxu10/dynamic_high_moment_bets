@@ -32,7 +32,9 @@ class CliAdapter(UserInterfacePort):
     def ask_leg_info(self, valid_types: Dict[str, str]) -> Dict[str, Any]:
         """Ask user for leg information via command line."""
         print(f"\n--- New Leg ---")
-        print(f"Valid leg types: {', '.join(valid_types.keys())}")
+        print("Valid leg types:")
+        for code, name in valid_types.items():
+            print(f"  {code} (for {name.lower().replace('short', 'short ').replace('long', 'long ')})")
         
         # Get leg type
         while True:
