@@ -1,48 +1,40 @@
-def ask_for_number_of_legs():
-    return _get_validated_input(
-        "How many legs in your portfolio? ",
-        int,
-        "Please enter a valid number.",
-        lambda x: x > 0,
-        "Please enter a positive number."
-    )
+"""
+CLI Adapter - Implements UserInterfacePort for command-line interface.
 
-def _get_validated_input(prompt, converter, error_msg, validator=None, validation_error_msg=None):
-    """Get and validate user input with a type converter and optional validator."""
-    while True:
-        try:
-            value = converter(input(prompt))
-            if validator is None or validator(value):
-                return value
-            if validation_error_msg:
-                print(validation_error_msg)
-        except ValueError:
-            print(error_msg)
+This adapter knows HOW to interact via command line (input(), print()).
+It does NOT know about business logic (that's in Presenter).
+"""
+from typing import Dict, Any
 
-def define_valid_leg_types():
-    valid_types = {
-        'sp': 'ShortPut',
-        'sc': 'ShortCall', 
-        'lc': 'LongCall',
-        'lp': 'LongPut',
-        'ls': 'LongStock'
-    }
-    
-    return valid_types
+from src.presenter import UserInterfacePort, PositionPresenter
 
-def display_info():
-    """Ask users for the number of legs and collect leg information."""
-    legs = []
+
+class CliAdapter(UserInterfacePort):
+    """
+    CLI Adapter: Implements UserInterfacePort using command-line I/O.
     
-    num_legs = ask_for_number_of_legs()
-    valid_types = define_valid_leg_types()
+    This is the "HOW" for CLI - it handles:
+    - Prompting user with input()
+    - Validating user input
+    - Printing results with print()
+    """
     
-    # Collect information for each leg
-    for i in range(num_legs):
-        print(f"\n--- Leg {i + 1} ---")
+    def ask_number_of_legs(self) -> int:
+        """Ask user for number of legs via command line."""
+        return self._get_validated_input(
+            "How many legs in your portfolio? ",
+            int,
+            "Please enter a valid number.",
+            lambda x: x > 0,
+            "Please enter a positive number."
+        )
+    
+    def ask_leg_info(self, valid_types: Dict[str, str]) -> Dict[str, Any]:
+        """Ask user for leg information via command line."""
+        print(f"\n--- New Leg ---")
+        print(f"Valid leg types: {', '.join(valid_types.keys())}")
         
         # Get leg type
-        print(f"Valid leg types: {', '.join(valid_types.keys())}")
         while True:
             leg_type = input("Enter leg type: ").strip().lower()
             if leg_type in valid_types:
@@ -50,14 +42,14 @@ def display_info():
             print("Invalid leg type. Please choose from the valid options.")
         
         # Get strike
-        strike = _get_validated_input(
+        strike = self._get_validated_input(
             "Enter strike price: ",
             float,
             "Please enter a valid number for strike price."
         )
         
         # Get premium
-        premium = _get_validated_input(
+        premium = self._get_validated_input(
             "Enter premium: ",
             float,
             "Please enter a valid number for premium."
@@ -67,7 +59,7 @@ def display_info():
         expiration = input("Enter expiration date (YYYY-MM-DD): ").strip()
         
         # Get volume
-        volume = _get_validated_input(
+        volume = self._get_validated_input(
             "Enter volume (number of contracts): ",
             int,
             "Please enter a valid integer for volume.",
@@ -82,69 +74,45 @@ def display_info():
             'expiration': expiration,
             'volume': volume
         }
-        legs.append(leg_info)
-        print(f"Added {leg_type} leg with strike={strike}, premium={premium}, expiration={expiration}, volume={volume}")
+        
+        print(f"Added {leg_type} leg with strike={strike}, premium={premium}, "
+              f"expiration={expiration}, volume={volume}")
+        
+        return leg_info
     
-    return legs
-
-
-
-def parse_user_input(user_input):
-    """Parse user input string in format 'type key=value key=value ...'.
+    def display_result(self, max_loss: float) -> None:
+        """Display max loss result via command line."""
+        print(f"\n{'='*50}")
+        print(f"Max loss of Position: {max_loss}")
+        print(f"{'='*50}")
     
-    Example: 'long_call strike=100 premium=5.0 expiration=2025-12-20 volume=1'
-    """
-    parts = user_input.split()
-    leg_type = parts[0]
+    def display_error(self, message: str) -> None:
+        """Display error message via command line."""
+        print(f"\nERROR: {message}")
     
-    # Parse key=value pairs
-    kwargs = {}
-    for part in parts[1:]:
-        key, value = part.split('=')
-        if key in ['strike', 'premium']:
-            kwargs[key] = float(value)
-        elif key == 'volume':
-            kwargs[key] = int(value)
-        else:
-            kwargs[key] = value
-    
-    return {'type': leg_type, **kwargs}
+    def _get_validated_input(self, prompt, converter, error_msg, 
+                             validator=None, validation_error_msg=None):
+        """Get and validate user input with a type converter."""
+        while True:
+            try:
+                value = converter(input(prompt))
+                if validator is None or validator(value):
+                    return value
+                if validation_error_msg:
+                    print(validation_error_msg)
+            except ValueError:
+                print(error_msg)
 
 
 def run_cli():
-    """Run the CLI in interactive mode."""
-    legs_data = display_info()
-    position = _build_position_from_leg_data(legs_data)
-    max_loss = position.max_loss()
-    return f"Max loss of Position: {max_loss}"
-
-
-def _build_position_from_leg_data(legs_data):
-    """Build a Position from parsed leg data."""
-    from src.position_builder import Contract, ShortPut, ShortCall, LongCall, LongPut, LongStock, Position
+    """
+    Run the CLI application.
     
-    type_mapping = {
-        'sp': ShortPut,
-        'sc': ShortCall,
-        'lc': LongCall,
-        'lp': LongPut,
-        'ls': LongStock,
-    }
-    
-    legs = []
-    for leg_data in legs_data:
-        leg_type = leg_data['type']
-        contract = Contract(
-            strike=leg_data['strike'],
-            premium=leg_data['premium'],
-            expiration=leg_data.get('expiration', ''),
-            volume=leg_data.get('volume', 1)
-        )
-        leg_class = type_mapping.get(leg_type)
-        if leg_class:
-            legs.append(leg_class(contract))
-    
-    return Position(legs=legs)
+    This is the entry point for CLI mode.
+    """
+    ui = CliAdapter()
+    presenter = PositionPresenter(ui)
+    return presenter.run()
 
 
 if __name__ == "__main__":
