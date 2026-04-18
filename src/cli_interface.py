@@ -29,12 +29,23 @@ class CliAdapter(UserInterfacePort):
             "Please enter a positive number."
         )
     
+    def _format_leg_type_description(self, name: str) -> str:
+        """Convert class name to readable description.
+        
+        Examples:
+            ShortPut -> short put
+            LongCall -> long call
+            LongStock -> long stock
+        """
+        return name.lower().replace('short', 'short ').replace('long', 'long ')
+    
     def ask_leg_info(self, valid_types: Dict[str, str]) -> Dict[str, Any]:
         """Ask user for leg information via command line."""
         print(f"\n--- New Leg ---")
         print("Valid leg types:")
         for code, name in valid_types.items():
-            print(f"  {code} (for {name.lower().replace('short', 'short ').replace('long', 'long ')})")
+            description = self._format_leg_type_description(name)
+            print(f"  {code} (for {description})")
         
         # Get leg type
         while True:
