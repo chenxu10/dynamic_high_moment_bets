@@ -6,7 +6,7 @@ It does NOT know about business logic (that's in Presenter).
 """
 from typing import Dict, Any
 
-from src.presenter import UserInterfacePort, PositionPresenter
+from src.strategy_interface import UserInterfacePort, PositionPresenter
 
 
 class CliAdapter(UserInterfacePort):
