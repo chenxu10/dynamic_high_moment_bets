@@ -6,7 +6,7 @@ These tests verify:
 2. The CLI adapter handles real command-line I/O
 """
 from src.cli_interface import CliAdapter, run_cli
-from src.presenter import PositionPresenter
+from src.strategy_interface import PositionPresenter
 
 
 # =============================================================================

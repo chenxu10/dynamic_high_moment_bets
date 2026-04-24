@@ -168,4 +168,14 @@ This last test forces you to handle the general case and confirms that your desi
 
 *Remember Polya's advice: If you cannot solve the whole problem, solve a part of it. If the step is too big, make it smaller. Good tests are questions you ask your code; listen carefully to the answers.*
 
-## Teaching Principles
+## Heuristics that take care of your own brain
+### A.2 The 80/24 rule
+Write small blocks of code.
+In C-based languages like C#, Java, C++, or JavaScript, consider staying within a
+80x24 character box. That corresponds to an old terminal window.
+Don’t take the threshold values 80 and 24 too literally. I picked them for three reasons:
+• They work well in practice
+• Continuity with tradition
+• Mnemonically, it sounds like the Pareto principle, also known as the 80/20 rule
+You can decide on other threshold values. I think the most important part of this rule is
+to pick a set of thresholds and consistently stay within those limits.
