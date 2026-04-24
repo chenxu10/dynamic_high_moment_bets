@@ -64,7 +64,7 @@ def test_run_cli_with_long_call_leg():
     # Arrange: Mock UI with pre-programmed user responses
     mock_ui = MockUIAdapter([
         1,  # number of legs
-        {'type': 'lc', 'strike': 100, 'premium': 5.0, 'expiration': '2025-12-20', 'volume': 1}
+        {'type': 'lc', 'strike': 100, 'unit_premium': 5.0, 'expiration': '2025-12-20', 'volume': 1}
     ])
     
     # Act: Presenter orchestrates the flow
@@ -80,7 +80,7 @@ def test_run_cli_with_long_put_leg():
     """Presenter should calculate max loss for a single long put leg."""
     mock_ui = MockUIAdapter([
         1,
-        {'type': 'lp', 'strike': 100, 'premium': 3.0, 'expiration': '2025-12-20', 'volume': 1}
+        {'type': 'lp', 'strike': 100, 'unit_premium': 3.0, 'expiration': '2025-12-20', 'volume': 1}
     ])
     
     presenter = PositionPresenter(mock_ui)
@@ -93,7 +93,7 @@ def test_run_cli_with_short_call_leg():
     """Presenter should return infinity for unlimited loss short call."""
     mock_ui = MockUIAdapter([
         1,
-        {'type': 'sc', 'strike': 100, 'premium': 5.0, 'expiration': '2025-12-20', 'volume': 1}
+        {'type': 'sc', 'strike': 100, 'unit_premium': 5.0, 'expiration': '2025-12-20', 'volume': 1}
     ])
     
     presenter = PositionPresenter(mock_ui)
@@ -107,8 +107,8 @@ def test_run_cli_with_multiple_legs():
     """Presenter should handle multiple legs correctly."""
     mock_ui = MockUIAdapter([
         2,  # number of legs
-        {'type': 'lc', 'strike': 100, 'premium': 5.0, 'expiration': '2025-12-20', 'volume': 1},
-        {'type': 'lp', 'strike': 90, 'premium': 3.0, 'expiration': '2025-12-20', 'volume': 1}
+        {'type': 'lc', 'strike': 100, 'unit_premium': 5.0, 'expiration': '2025-12-20', 'volume': 1},
+        {'type': 'lp', 'strike': 90, 'unit_premium': 3.0, 'expiration': '2025-12-20', 'volume': 1}
     ])
     
     presenter = PositionPresenter(mock_ui)

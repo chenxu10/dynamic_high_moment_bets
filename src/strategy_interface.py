@@ -120,7 +120,7 @@ class PositionPresenter:
             
             contract = Contract(
                 strike=leg_data['strike'],
-                premium=leg_data['premium'],
+                unit_premium=leg_data['unit_premium'],
                 expiration=leg_data.get('expiration', ''),
                 volume=leg_data.get('volume', 1)
             )

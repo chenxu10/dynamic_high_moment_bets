@@ -62,10 +62,10 @@ class CliAdapter(UserInterfacePort):
         )
         
         # Get premium
-        premium = self._get_validated_input(
-            "Enter premium: ",
+        unit_premium = self._get_validated_input(
+            "Enter unit premium: ",
             float,
-            "Please enter a valid number for premium."
+            "Please enter a valid number for unit premium."
         )
         
         # Get expiration
@@ -83,12 +83,12 @@ class CliAdapter(UserInterfacePort):
         leg_info = {
             'type': leg_type,
             'strike': strike,
-            'premium': premium,
+            'unit_premium': unit_premium,
             'expiration': expiration,
             'volume': volume
         }
         
-        print(f"Added {leg_type} leg with strike={strike}, premium={premium}, "
+        print(f"Added {leg_type} leg with strike={strike}, unit_premium={unit_premium}, "
               f"expiration={expiration}, volume={volume}")
         
         return leg_info

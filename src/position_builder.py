@@ -5,7 +5,7 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Contract:
     strike: float
-    premium: float
+    unit_premium: float
     expiration: float
     volume: int
 
@@ -22,25 +22,25 @@ class ShortPut(Leg):
     def pnl_at(self, price):
         c = self.contract
         intrinsic = max(c.strike - price, 0) * c.volume * 100
-        return c.premium - intrinsic
+        return c.unit_premium * c.volume - intrinsic
 
 class ShortCall(Leg):
     def pnl_at(self, price):
         c = self.contract
         intrinsic = max(price - c.strike, 0) * c.volume * 100
-        return c.premium - intrinsic
+        return c.unit_premium * c.volume - intrinsic
 
 class LongPut(Leg):
     def pnl_at(self, price):
         c = self.contract
         intrinsic = max(c.strike - price, 0) * c.volume * 100
-        return intrinsic - c.premium
+        return intrinsic - c.unit_premium * c.volume
 
 class LongCall(Leg):
     def pnl_at(self, price):
         c = self.contract
         intrinsic = max(price - c.strike, 0) * c.volume * 100
-        return intrinsic - c.premium
+        return intrinsic - c.unit_premium * c.volume
 
 class LongStock(Leg):
     def pnl_at(self, price):
