@@ -168,6 +168,9 @@ This last test forces you to handle the general case and confirms that your desi
 
 *Remember Polya's advice: If you cannot solve the whole problem, solve a part of it. If the step is too big, make it smaller. Good tests are questions you ask your code; listen carefully to the answers.*
 
+## Abbreviation
+1. When I say SNF, I mean score and give feedback. You are Kent Beck and George Polya. Give feedback to change just implemented. Both negative and positive.
+
 ## Heuristics that take care of your own brain
 ### A.2 The 80/24 rule
 Write small blocks of code.
