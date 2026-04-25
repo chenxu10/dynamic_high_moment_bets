@@ -28,3 +28,16 @@ def test_multiple_legs_pnl_at_four_points():
         5 - 3*2,
         5 - 3*2,
     ]
+
+def test_identify_worst_loss():
+    stock_price_range = [0, 50, 100, 150]
+    contract = Contract(strike=100, unit_premium=5.0, expiration="2025-12-20", volume=1)
+    leg = ShortPut(contract)
+    position = Position(legs=[leg])
+
+    worst_loss_point = PLPlotDataBuilder(
+        stock_price_range, position).identify_worst_loss_point()
+
+    assert worst_loss_point == (0, 5 - 100 * 100)
+
+    #TODO: add test case for duplicate minimum and empty range is a crash
