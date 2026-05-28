@@ -7,7 +7,7 @@ It does NOT know about business logic (that's in Presenter).
 from typing import Dict, Any
 
 from src.strategy_interface import UserInterfacePort, PositionPresenter
-from src.plvisualizer.matplotlib_adapter import MatplotlibPlotAdapter
+from src.expplvisualizer.matplotlib_adapter import MatplotlibPlotAdapter
 
 
 class CliAdapter(UserInterfacePort):
