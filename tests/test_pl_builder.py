@@ -150,14 +150,14 @@ def test_breakeven_for_single_leg_long_call():
     position = Position(legs=[LongCall(contract)])
     builder = PLPlotDataBuilder([90, 100, 105, 110, 120], position)
     breakevens = builder.calculate_breakeven_points()
-    # Long call P&L: max(price - 100, 0)*100 - 5
-    # Breakeven when (price - 100)*100 = 5 -> price = 100.05
-    assert abs(breakevens[0] - 100.05) < 1e-6
+    # Long call P&L: max(price - 100, 0)*100 - 500
+    # Breakeven when (price - 100)*100 = 500 -> price = 105
+    assert abs(breakevens[0] - 105.0) < 1e-6
 
 
 def test_breakeven_for_short_put():
-    """Breakeven for a short put is strike - premium / (100 * volume)."""
-    contract = Contract(strike=100, unit_premium=500.0, expiration="2025-12-20", volume=1)
+    """Breakeven for a short put is strike - premium."""
+    contract = Contract(strike=100, unit_premium=5, expiration="2025-12-20", volume=1)
     position = Position(legs=[ShortPut(contract)])
     # Short put P&L: 500 - max(100 - price, 0)*100
     # Breakeven when 500 = (100 - price)*100 -> price = 95
@@ -168,7 +168,7 @@ def test_breakeven_for_short_put():
 
 def test_breakeven_points_in_plot_data():
     """PlotData should include breakeven points from the builder."""
-    contract = Contract(strike=100, unit_premium=500.0, expiration="2025-12-20", volume=1)
+    contract = Contract(strike=100, unit_premium=5.0, expiration="2025-12-20", volume=1)
     position = Position(legs=[ShortPut(contract)])
     builder = PLPlotDataBuilder([0, 50, 95, 100, 150], position)
     plot_data = builder.build()
@@ -182,14 +182,14 @@ def test_breakeven_multiple_crossings():
     long_call = LongCall(Contract(strike=90, unit_premium=8.0, expiration="2025-12-20", volume=1))
     short_call = ShortCall(Contract(strike=110, unit_premium=3.0, expiration="2025-12-20", volume=1))
     position = Position(legs=[long_call, short_call])
-    # Net premium paid = 8 - 3 = 5
-    # P&L below 90: -5
-    # P&L between 90 and 110: (price - 90)*100 - 5
-    # P&L above 110: (110 - 90)*100 - 5 = 2000 - 5 = 1995
-    # Breakevens: price where (price - 90)*100 = 5 -> price = 90.05
+    # Net premium paid = (8 - 3)*100 = 500
+    # P&L below 90: -500
+    # P&L between 90 and 110: (price - 90)*100 - 500
+    # P&L above 110: (110 - 90)*100 - 500 = 2000 - 500 = 1500
+    # Breakevens: price where (price - 90)*100 = 500 -> price = 95
     builder = PLPlotDataBuilder([80, 90, 100, 110, 120], position)
     breakevens = builder.calculate_breakeven_points()
-    assert abs(breakevens[0] - 90.05) < 1e-6
+    assert abs(breakevens[0] - 95.0) < 1e-6
     assert len(breakevens) == 1
 
 

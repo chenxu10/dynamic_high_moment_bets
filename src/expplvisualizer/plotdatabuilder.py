@@ -1,7 +1,14 @@
 from dataclasses import dataclass
 from typing import List, Tuple, Dict, Any
 
-from src.position_builder import Position
+from src.position_builder import (
+    Position,
+    LongCall,
+    ShortCall,
+    LongPut,
+    ShortPut,
+    LongStock,
+)
 
 
 @dataclass
@@ -18,6 +25,28 @@ class PlotData:
 def _compute_pnl_at(price, legs):
     """Total P&L for all legs at a single underlying price."""
     return sum(leg.pnl_at(price) for leg in legs)
+
+
+def _compute_correct_pnl_at(price, legs):
+    """Total P&L with premium multiplied by 100 (correct financial logic)."""
+    total = 0
+    for leg in legs:
+        c = leg.contract
+        if isinstance(leg, LongCall):
+            intrinsic = max(price - c.strike, 0) * c.volume * 100
+            total += intrinsic - c.unit_premium * c.volume * 100
+        elif isinstance(leg, ShortCall):
+            intrinsic = max(price - c.strike, 0) * c.volume * 100
+            total += c.unit_premium * c.volume * 100 - intrinsic
+        elif isinstance(leg, LongPut):
+            intrinsic = max(c.strike - price, 0) * c.volume * 100
+            total += intrinsic - c.unit_premium * c.volume * 100
+        elif isinstance(leg, ShortPut):
+            intrinsic = max(c.strike - price, 0) * c.volume * 100
+            total += c.unit_premium * c.volume * 100 - intrinsic
+        elif isinstance(leg, LongStock):
+            total += (price - c.strike) * c.volume
+    return total
 
 
 def _collect_critical_prices(position):
@@ -111,7 +140,10 @@ class PLPlotDataBuilder:
             return []
 
         critical_prices = _collect_critical_prices(self.position)
-        pnl_values = _sample_pnl_at_prices(critical_prices, self.position)
+        pnl_values = [
+            _compute_correct_pnl_at(p, self.position.legs)
+            for p in critical_prices
+        ]
 
         breakevens = _find_zero_crossings(critical_prices, pnl_values)
         breakevens = _append_last_point_if_zero(critical_prices, pnl_values, breakevens)
