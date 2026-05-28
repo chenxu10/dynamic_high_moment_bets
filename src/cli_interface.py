@@ -7,6 +7,7 @@ It does NOT know about business logic (that's in Presenter).
 from typing import Dict, Any
 
 from src.strategy_interface import UserInterfacePort, PositionPresenter
+from src.plvisualizer.matplotlib_adapter import MatplotlibPlotAdapter
 
 
 class CliAdapter(UserInterfacePort):
@@ -98,7 +99,12 @@ class CliAdapter(UserInterfacePort):
         print(f"\n{'='*50}")
         print(f"Max loss of Position: {max_loss}")
         print(f"{'='*50}")
-    
+
+    def display_plot(self, plot_data) -> None:
+        """Display P&L plot using matplotlib."""
+        adapter = MatplotlibPlotAdapter()
+        adapter.render(plot_data)
+
     def display_error(self, message: str) -> None:
         """Display error message via command line."""
         print(f"\nERROR: {message}")

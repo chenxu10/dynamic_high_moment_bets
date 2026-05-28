@@ -26,6 +26,7 @@ class MockUIAdapter:
         self.input_index = 0
         self.recorded_outputs = []
         self.recorded_errors = []
+        self.recorded_plot_data = None
     
     def ask_number_of_legs(self):
         """Return next simulated input."""
@@ -42,7 +43,11 @@ class MockUIAdapter:
     def display_result(self, max_loss):
         """Record the result."""
         self.recorded_outputs.append(f"Max loss: {max_loss}")
-    
+
+    def display_plot(self, plot_data):
+        """Record the plot data."""
+        self.recorded_plot_data = plot_data
+
     def display_error(self, message):
         """Record the error."""
         self.recorded_errors.append(message)
@@ -118,4 +123,17 @@ def test_run_cli_with_multiple_legs():
     assert "Max loss of Position:" in result
 
 
+def test_presenter_passes_plot_data_to_ui():
+    """Presenter should build PlotData and pass it to UI's display_plot."""
+    mock_ui = MockUIAdapter([
+        1,
+        {'type': 'sp', 'strike': 100, 'unit_premium': 5.0, 'expiration': '2025-12-20', 'volume': 1}
+    ])
+
+    presenter = PositionPresenter(mock_ui)
+    presenter.run()
+
+    assert mock_ui.recorded_plot_data is not None
+    assert mock_ui.recorded_plot_data.max_loss_marker["color"] == "black"
+    assert len(mock_ui.recorded_plot_data.curve_points) > 0
 

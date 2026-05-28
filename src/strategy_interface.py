@@ -10,6 +10,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List
 
 from src.position_builder import Contract, ShortPut, ShortCall, LongCall, LongPut, LongStock, Position
+from src.plvisualizer.plotdatabuilder import PLPlotDataBuilder
 
 
 class UserInterfacePort(ABC):
@@ -34,7 +35,12 @@ class UserInterfacePort(ABC):
     def display_result(self, max_loss: float) -> None:
         """Display the calculated max loss to the user."""
         pass
-    
+
+    @abstractmethod
+    def display_plot(self, plot_data) -> None:
+        """Display the P&L plot to the user."""
+        pass
+
     @abstractmethod
     def display_error(self, message: str) -> None:
         """Display an error message to the user."""
@@ -94,14 +100,45 @@ class PositionPresenter:
         try:
             position = self._build_position(legs_data)
             max_loss = position.max_loss()
-            
-            # Step 4: Display result
+
+            # Step 4: Build plot data
+            price_range = self._generate_price_range(position)
+            plot_data = PLPlotDataBuilder(price_range, position).build()
+
+            # Step 5: Display result and plot
             self.ui.display_result(max_loss)
+            self.ui.display_plot(plot_data)
             return f"Max loss of Position: {max_loss}"
-            
+
         except Exception as e:
             self.ui.display_error(f"Error calculating max loss: {e}")
             return f"Error: {e}"
+
+    def _generate_price_range(self, position: Position) -> List[float]:
+        """Generate a reasonable price range for plotting.
+
+        Includes 0, all strike prices, and extends 50% above
+        the highest strike for a comprehensive view.
+        """
+        if not position.legs:
+            return []
+
+        max_strike = max(leg.contract.strike for leg in position.legs)
+        min_price = 0.0
+        max_price = max_strike * 1.5
+        num_points = 200
+
+        # Evenly spaced points
+        raw_range = [
+            min_price + i * (max_price - min_price) / (num_points - 1)
+            for i in range(num_points)
+        ]
+
+        # Ensure all strikes are included so kinks are visible
+        strikes = [leg.contract.strike for leg in position.legs]
+
+        combined = sorted(set(round(p, 2) for p in raw_range + strikes))
+        return combined
     
     def _build_position(self, legs_data: List[Dict[str, Any]]) -> Position:
         """
