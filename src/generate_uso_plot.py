@@ -37,6 +37,26 @@ PORTFOLIO_LEGS = [
 # DATA FETCHING
 # =============================================================================
 
+def _extract_current_price(data):
+    """Return the most recent closing price as a float."""
+    return float(data['Close'].values.flatten()[-1])
+
+
+def _extract_historical_prices(data):
+    """Return all historical closing prices as a flat numpy array."""
+    return data['Close'].values.flatten()
+
+
+def _compute_annualized_volatility(daily_returns):
+    """Annualize the standard deviation of daily log returns."""
+    return float(np.std(daily_returns) * np.sqrt(252))
+
+
+def _compute_log_returns(hist_prices):
+    """Compute daily log returns from a series of prices."""
+    return np.diff(np.log(hist_prices))
+
+
 def fetch_ticker_data(ticker: str):
     """Download historical price data for the given ticker.
 
@@ -47,15 +67,16 @@ def fetch_ticker_data(ticker: str):
         data = yf.download(ticker, period="1y", progress=False)
         print(data)
         if not data.empty:
-            current_price = float(data['Close'].values.flatten()[-1])
-            hist_prices = data['Close'].values.flatten()
-            returns = np.diff(np.log(hist_prices))
-            realized_vol = float(np.std(returns) * np.sqrt(252))
+            current_price = _extract_current_price(data)
+            hist_prices = _extract_historical_prices(data)
+            returns = _compute_log_returns(hist_prices)
+            realized_vol = _compute_annualized_volatility(returns)
             print(f"  (live data from Yahoo Finance)")
             return current_price, realized_vol, hist_prices
     except Exception as exc:
         print(f"  Live download failed: {exc}")
         raise
+
 
 # =============================================================================
 # PROBABILITY DISTRIBUTIONS
@@ -337,12 +358,14 @@ def main():
     print(f"  Realized vol:  {realized_vol*100:.1f}%")
 
     # # 2. Build probability distributions
-    # prices, student_t_density, normal_density = build_distributions(
-    #     current_price, SIMULATION_DAYS, MEAN_IV,
-    #     n_points=N_PRICE_POINTS, range_pct=PRICE_RANGE_PCT
-    # )
+    prices, student_t_density, normal_density = build_distributions(
+        current_price, SIMULATION_DAYS, MEAN_IV,
+        n_points=N_PRICE_POINTS, range_pct=PRICE_RANGE_PCT
+    )
+    print(f"  Price range: ${prices[0]:,.2f} - ${prices[-1]:,.2f}")
+    print(f"  Price points: {len(prices)}")
 
-    # # 3. Compute portfolio P&L
+    # 3. Compute portfolio P&L
     # pnls = compute_payoff_curve(prices, PORTFOLIO_LEGS)
     # breakevens = find_breakevens(prices, pnls)
     # max_profit, max_loss = find_max_profit_loss_in_range(prices, pnls)
