@@ -1,4 +1,4 @@
-from src.position_builder import Contract, Position, ShortPut, ShortCall, LongCall, LongPut, LongStock
+from src.legpositionstructure.position_builder import Contract, Position, ShortPut, ShortCall, LongCall, LongPut, LongStock
 
 
 def test_naked_short_put_max_loss():
