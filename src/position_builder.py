@@ -4,6 +4,11 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Contract:
+    """
+    If premium is input as 12, volume is 2.
+    Then bid ask price should be roughly
+    12/(2 *100) = 0.06
+    """
     strike: float
     premium: float
     expiration: float
