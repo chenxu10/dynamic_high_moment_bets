@@ -72,7 +72,7 @@ def fetch_ticker_data(ticker: str):
             returns = _compute_log_returns(hist_prices)
             realized_vol = _compute_annualized_volatility(returns)
             print(f"  (live data from Yahoo Finance)")
-            return current_price, realized_vol, hist_prices
+            return current_price, realized_vol, hist_prices, returns
     except Exception as exc:
         print(f"  Live download failed: {exc}")
         raise
@@ -82,43 +82,25 @@ def fetch_ticker_data(ticker: str):
 # PROBABILITY DISTRIBUTIONS
 # =============================================================================
 
-def student_t_pdf(x, loc, scale, df=5):
-    """Student-t probability density with fat tails."""
-    return stats.t.pdf(x, df=df, loc=loc, scale=scale)
-
-
-def normal_pdf(x, loc, scale):
-    """Normal (BSM baseline) probability density."""
-    return stats.norm.pdf(x, loc=loc, scale=scale)
-
-
-def build_distributions(current_price, days, iv, n_points=500, range_pct=0.25):
-    """Build price grids and probability densities."""
-    # Price range: +/- range_pct around current price
+def build_distributions(current_price, days, returns, n_points=500, range_pct=0.25):
+    """Build price grids and probability densities from fitted historical returns."""
     price_min = current_price * (1 - range_pct)
     price_max = current_price * (1 + range_pct)
     prices = np.linspace(price_min, price_max, n_points)
 
-    # Annualized -> over `days`
+    # Fit distributions to historical log returns
+    norm_loc, norm_scale = stats.norm.fit(returns)
+    df, t_loc, t_scale = stats.t.fit(returns)
+
+    # Project forward
     t = days / 252.0
-    sigma_t = iv * np.sqrt(t)
+    norm_scale *= np.sqrt(t)
+    t_scale *= np.sqrt(t)
 
-    # Scale in log-space, then transform back
+    # Build densities in log-space, then transform to price-space
     log_s0 = np.log(current_price)
-    log_scale = sigma_t
-
-    # Student-t (fat-tail, IV-scaled)
-    # We match the variance by scaling appropriately
-    # Variance of t(df) = df/(df-2) for df>2; adjust scale
-    df = 5
-    t_scale = log_scale / np.sqrt(df / (df - 2))
-    student_t_log = student_t_pdf(np.log(prices), loc=log_s0, scale=t_scale, df=df)
-    # Jacobian adjustment for log-normal transformation
-    student_t_density = student_t_log / prices
-
-    # Normal / Lognormal (BSM baseline)
-    normal_log = normal_pdf(np.log(prices), loc=log_s0, scale=log_scale)
-    normal_density = normal_log / prices
+    normal_density = stats.norm.pdf(np.log(prices), loc=log_s0 + norm_loc * t, scale=norm_scale) / prices
+    student_t_density = stats.t.pdf(np.log(prices), df=df, loc=log_s0 + t_loc * t, scale=t_scale) / prices
 
     # Normalize both to integrate to 1 over the visible range
     for arr in [student_t_density, normal_density]:
@@ -353,13 +335,13 @@ def plot_analysis(ticker, current_price, realized_vol,
 
 def main():
     # 1. Fetch USO data
-    current_price, realized_vol, hist_prices = fetch_ticker_data(TICKER)
+    current_price, realized_vol, hist_prices, returns = fetch_ticker_data(TICKER)
     print(f"  Current price: ${current_price:,.2f}")
     print(f"  Realized vol:  {realized_vol*100:.1f}%")
 
     # # 2. Build probability distributions
     prices, student_t_density, normal_density = build_distributions(
-        current_price, SIMULATION_DAYS, MEAN_IV,
+        current_price, SIMULATION_DAYS, returns,
         n_points=N_PRICE_POINTS, range_pct=PRICE_RANGE_PCT
     )
     print(f"  Price range: ${prices[0]:,.2f} - ${prices[-1]:,.2f}")
